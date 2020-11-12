@@ -5,6 +5,25 @@ import argparse
 import csv
 import sys
 
+import numpy as np
+import pandas as pd
+import plotnine as plt9
+
+APPEARANCE_TYPES = [
+    "Main",
+    "Secondary",
+    "Minor",
+    "One Appearance",
+    "Voice Cameos",
+    "Voice Cameo",
+    "Cameo",
+    "Cameo (Corpse)",
+    "Mentioned",
+    #    "Deceased",
+    #    "No Appearance",
+    #    "???",
+]
+
 VOLUME_COLUMNS = [
     "Trailers",
     "Volume 1",
@@ -25,10 +44,16 @@ def main(argv: List[str]) -> None:
     parser.add_argument(
         "--output_character_appearances_csv", default="character_appearances.csv"
     )
+    parser.add_argument(
+        "--output_num_characters_by_volume_plot", default="num_characters_by_volume.png"
+    )
 
     args = parser.parse_args(argv)
 
     pre_process(args)
+
+    data = Data.from_files(args)
+    plot_num_characters_by_volume(args, data.appearances)
 
 
 def pre_process(args: argparse.Namespace) -> None:
@@ -38,6 +63,58 @@ def pre_process(args: argparse.Namespace) -> None:
     with open(args.output_character_appearances_csv, "w") as output_stream:
         write_character_appearances(output_stream, character_entries)
     print("Wrote character appearances to:", args.output_character_appearances_csv)
+
+
+def plot_num_characters_by_volume(args: argparse.Namespace, data: pd.DataFrame) -> None:
+    plot = (
+        plt9.ggplot(data, plt9.aes("volume", fill="appearance_type"))
+        + plt9.geom_bar(stat="count")
+        + plt9.geom_text(
+            plt9.aes(label="stat(count)", size=1.0),
+            stat="count",
+            position=plt9.position_stack(vjust=0.5),
+            show_legend=False,
+        )
+        + plt9.xlab("Volume")
+        + plt9.ylab("Num characters in volume")
+        + plt9.scale_fill_hue(name="Appearance")
+    )
+
+    plot.save(args.output_num_characters_by_volume_plot, dpi=300, height=9, width=8)
+    print(
+        "Wrote num characters by volume plot to:",
+        args.output_num_characters_by_volume_plot,
+    )
+
+
+@dataclass
+class Data:
+    appearances: pd.DataFrame
+
+    @staticmethod
+    def from_files(args: argparse.Namespace) -> "Data":
+        appearances = Data.load_appearances(args)
+
+        return Data(appearances)
+
+    @staticmethod
+    def load_appearances(args) -> pd.DataFrame:
+        data = pd.read_csv(args.output_character_appearances_csv)
+
+        # Filter out cases that aren't actual appearances
+        appearances = data[
+            (data["appearance_type"] != "No Appearance")
+            & (data["appearance_type"] != "???")
+            & (data["appearance_type"] != "Deceased")
+        ].copy()
+
+        # Sort the appearance type categories by the degree of appearance
+        appearances["appearance_type"] = pd.Categorical(
+            appearances["appearance_type"],
+            categories=APPEARANCE_TYPES[::-1],
+        )
+
+        return appearances
 
 
 @dataclass
