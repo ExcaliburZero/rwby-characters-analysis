@@ -47,6 +47,9 @@ def main(argv: List[str]) -> None:
     parser.add_argument(
         "--output_num_characters_by_volume_plot", default="num_characters_by_volume.png"
     )
+    parser.add_argument(
+        "--output_characters_appearances", default="characters_appearances.png"
+    )
 
     args = parser.parse_args(argv)
 
@@ -54,6 +57,7 @@ def main(argv: List[str]) -> None:
 
     data = Data.from_files(args)
     plot_num_characters_by_volume(args, data.appearances)
+    plot_characters_appearances(args, data.appearances)
 
 
 def pre_process(args: argparse.Namespace) -> None:
@@ -88,6 +92,25 @@ def plot_num_characters_by_volume(args: argparse.Namespace, data: pd.DataFrame) 
     )
 
 
+def plot_characters_appearances(args: argparse.Namespace, data: pd.DataFrame) -> None:
+    plot = (
+        plt9.ggplot(data, plt9.aes("volume", "name", fill="appearance_type"))
+        + plt9.geom_tile(plt9.aes(tile_width=1.0, tile_height=1.0))
+        + plt9.ggtitle("Character appearances")
+        + plt9.xlab("Volume")
+        + plt9.ylab("Character")
+        + plt9.scale_fill_hue(name="Appearance")
+    )
+
+    plot.save(
+        args.output_characters_appearances, dpi=300, height=45, width=8, limitsize=False
+    )
+    print(
+        "Wrote character appearances plot:",
+        args.output_characters_appearances,
+    )
+
+
 @dataclass
 class Data:
     appearances: pd.DataFrame
@@ -113,6 +136,12 @@ class Data:
         appearances["appearance_type"] = pd.Categorical(
             appearances["appearance_type"],
             categories=APPEARANCE_TYPES[::-1],
+        )
+
+        # Use the existing ordering of names for plots
+        appearances["name"] = pd.Categorical(
+            appearances["name"],
+            categories=appearances["name"].unique()[::-1],
         )
 
         return appearances
