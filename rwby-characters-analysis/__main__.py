@@ -24,6 +24,12 @@ APPEARANCE_TYPES = [
     #    "???",
 ]
 
+NOTEABLE_APPEARANCE_TYPES = [
+    "Main",
+    "Secondary",
+    "Minor",
+]
+
 VOLUME_COLUMNS = [
     "Trailers",
     "Volume 1",
@@ -50,6 +56,10 @@ def main(argv: List[str]) -> None:
     parser.add_argument(
         "--output_characters_appearances", default="characters_appearances.png"
     )
+    parser.add_argument(
+        "--output_noteable_characters_appearances",
+        default="noteable_characters_appearances.png",
+    )
 
     args = parser.parse_args(argv)
 
@@ -58,6 +68,7 @@ def main(argv: List[str]) -> None:
     data = Data.from_files(args)
     plot_num_characters_by_volume(args, data.appearances)
     plot_characters_appearances(args, data.appearances)
+    plot_noteable_characters_appearances(args, data.appearances)
 
 
 def pre_process(args: argparse.Namespace) -> None:
@@ -108,6 +119,39 @@ def plot_characters_appearances(args: argparse.Namespace, data: pd.DataFrame) ->
     print(
         "Wrote character appearances plot:",
         args.output_characters_appearances,
+    )
+
+
+def plot_noteable_characters_appearances(
+    args: argparse.Namespace, data: pd.DataFrame
+) -> None:
+    # Filter down to just the notable characters
+    noteable_characters: List[str] = []
+    for name, entries in data.groupby("name"):
+        if any([a in NOTEABLE_APPEARANCE_TYPES for a in entries["appearance_type"]]):
+            noteable_characters.append(name)
+
+    noteable_data = data[[n in noteable_characters for n in data["name"]]]
+
+    plot = (
+        plt9.ggplot(noteable_data, plt9.aes("volume", "name", fill="appearance_type"))
+        + plt9.geom_tile(plt9.aes(tile_width=1.0, tile_height=1.0))
+        + plt9.ggtitle("Noteable character appearances")
+        + plt9.xlab("Volume")
+        + plt9.ylab("Character")
+        + plt9.scale_fill_hue(name="Appearance")
+    )
+
+    plot.save(
+        args.output_noteable_characters_appearances,
+        dpi=300,
+        height=45,
+        width=8,
+        limitsize=False,
+    )
+    print(
+        "Wrote noteable character appearances plot:",
+        args.output_noteable_characters_appearances,
     )
 
 
