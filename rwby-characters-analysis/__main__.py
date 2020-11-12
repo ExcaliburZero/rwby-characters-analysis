@@ -75,6 +75,7 @@ def plot_num_characters_by_volume(args: argparse.Namespace, data: pd.DataFrame) 
             position=plt9.position_stack(vjust=0.5),
             show_legend=False,
         )
+        + plt9.ggtitle("Num Characters per Volume")
         + plt9.xlab("Volume")
         + plt9.ylab("Num characters in volume")
         + plt9.scale_fill_hue(name="Appearance")
