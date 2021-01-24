@@ -1,0 +1,8 @@
+# Project-specific files
+character_appearances.csv
+characters_appearances.png
+noteable_characters_appearances.png
+num_characters_by_volume.png
+
+# VS Code
+.vscode/
