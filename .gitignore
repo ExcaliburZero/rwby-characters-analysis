@@ -6,3 +6,6 @@ num_characters_by_volume.png
 
 # VS Code
 .vscode/
+
+# Nodejs
+node_modules/
