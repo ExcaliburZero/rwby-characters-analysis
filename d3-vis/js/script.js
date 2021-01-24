@@ -1,3 +1,6 @@
+/* global d3 */
+/* exported main */
+
 function main() {
     let vis_svg = d3.select("#character-visualization")
         .append("svg");
